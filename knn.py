@@ -20,10 +20,17 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Train KNN classifier
-knn = KNeighborsClassifier(n_neighbors=5)
-knn.fit(X_train, y_train)
+# Define hyperparameters to search
+param_grid = {'n_neighbors': [3, 5, 7, 9, 11]}
 
+# Perform grid search with cross-validation
+knn = KNeighborsClassifier()
+grid_search = GridSearchCV(knn, param_grid, cv=5)
+grid_search.fit(X_train, y_train)
+
+# Train KNN classifier with best hyperparameters
+knn = grid_search.best_estimator_
+knn.fit(X_train, y_train)
 # Predict labels for test data
 y_pred = knn.predict(X_test)
 
@@ -34,3 +41,6 @@ print('Accuracy:', accuracy)
 # Print confusion matrix
 cm = confusion_matrix(y_test, y_pred)
 print('Confusion matrix:\n', cm)
+
+# Print best hyperparameters
+print('Best hyperparameters:', grid_search.best_params_)
