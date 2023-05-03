@@ -16,6 +16,7 @@ from keras.preprocessing.image import image_utils as iu
 from sklearn.model_selection import train_test_split
 from keras.applications.resnet import preprocess_input
 from keras.applications.resnet import ResNet50
+from sklearn import metrics
 
 # Create image and label databases
 folder = './images_original'
@@ -116,9 +117,13 @@ model.compile(optimizer=optimiser,
 #Train and Test
 model.fit(X_train, y_train, epochs=ep, batch_size=bs, validation_data=(X_val,y_val), verbose=1)
 score = model.evaluate(X_test, y_test, verbose=1)
+
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
-
+yhat=model.predict(X_test)
+y_test_OH=to_categorical(y_test)
+con=metrics.confusion_matrix(y_test_OH.argmax(axis=1), yhat.argmax(axis=1))
+print(con)
 ##########################################
 # Split Classic Model
 print("Split Classic Model")
@@ -163,16 +168,21 @@ model_split.fit(X_train_split, y_train_split, epochs=ep, batch_size=bs, validati
 score = model_split.evaluate(X_test_split, y_test_split, verbose=1)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
-
+yhat=model_split.predict(X_test_split)
+y_test_OH=to_categorical(y_test_split)
+con=metrics.confusion_matrix(y_test_OH.argmax(axis=1), yhat.argmax(axis=1))
+print(con)
 ################################
 # ResNet setup
+
 base_model = ResNet50(include_top=False, weights='imagenet')
 base_model.trainable = False
 base_model_split = ResNet50(include_top=False, weights='imagenet')
 base_model_split.trainable = False
 global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
 prediction_layer = tf.keras.layers.Dense(10)
-
+print("here")
+print(len(base_model.layers))
 # ResNet with normal database
 print("ResNet Model")
 inputs = tf.keras.Input(shape=resIn)
@@ -196,7 +206,7 @@ print("Test accuracy v1:", score[1])
 
 # Fine tuning
 base_model.trainable = True
-for layer in base_model.layers[:100]:
+for layer in base_model.layers[:40]:
   layer.trainable = False
 
 # Recompile
@@ -211,6 +221,11 @@ model_res.fit(X_train, y_train, epochs=total_epochs, initial_epoch=history.epoch
 score = model_res.evaluate(X_test, y_test, verbose=1)
 print("Test loss final:", score[0])
 print("Test accuracy final:", score[1])
+
+yhat=model_res.predict(X_test)
+y_test_OH=to_categorical(y_test)
+con=metrics.confusion_matrix(y_test_OH.argmax(axis=1), yhat.argmax(axis=1))
+print(con)
 ###############################################
 
 # ResNet with sliced database
@@ -252,3 +267,8 @@ model_res_split.fit(X_train_split, y_train_split, epochs=total_epochs, initial_e
 score = model_res_split.evaluate(X_test_split, y_test_split, verbose=1)
 print("Test loss final:", score[0])
 print("Test accuracy final:", score[1])
+
+yhat=model_res_split.predict(X_test_split)
+y_test_OH=to_categorical(y_test_split)
+con=metrics.confusion_matrix(y_test_OH.argmax(axis=1), yhat.argmax(axis=1))
+print(con)
